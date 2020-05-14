@@ -1,0 +1,1 @@
+obj-$(CONFIG_RRUGPIO) +=  rrugpio.o

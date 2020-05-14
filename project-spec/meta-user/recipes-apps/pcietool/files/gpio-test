@@ -1,0 +1,43 @@
+#!/bin/bash
+
+if [[ $# -lt 2 ]]; then
+	echo "Missing parameter"
+	echo -e 	"Example: gpio-test 147 on -> turn on pin 147\n" \
+			"         gpio-test 147 off -> turn off pin 147\n" \
+			"         gpio-test 147 in  -> read input pin 147\n" \
+			"         gpio-test 147 rise  -> turn on -> off -> on pin 147\n" \
+			"         gpio-test 147 fall  -> turn off -> on -> off pin 147\n"
+	exit 1
+fi
+
+pin="$1"
+
+GPIO_P="/sys/class/gpio"
+# requets GPIO
+echo "$pin" > $GPIO_P/export || exit 1
+
+if [[ "$2" == "in" ]]; then
+	echo "$2" > ${GPIO_P}/gpio${pin}/direction
+	cat ${GPIO_P}/gpio${pin}/input
+else
+	echo "out" > ${GPIO_P}/gpio${pin}/direction
+	if [ "$2" == "off" ] || [ "$2" == "0" ]; then
+		echo "0" > ${GPIO_P}/gpio${pin}/value
+	elif [ "$2" == "on" ] || [ "$2" == "1" ]; then
+		echo "1" > ${GPIO_P}/gpio${pin}/value
+	elif [[ "$2" == "rise" ]]; then
+		echo "1" > ${GPIO_P}/gpio${pin}/value
+		sleep 0.5
+		echo "0" > ${GPIO_P}/gpio${pin}/value
+		sleep 0.5
+		echo "1" > ${GPIO_P}/gpio${pin}/value
+	elif [[ "$2" == "fall" ]]; then
+		echo "0" > ${GPIO_P}/gpio${pin}/value
+		sleep 0.5
+		echo "1" > ${GPIO_P}/gpio${pin}/value
+		sleep 0.5
+		echo "0" > ${GPIO_P}/gpio${pin}/value
+	fi
+fi
+
+echo "$pin" > ${GPIO_P}/unexport

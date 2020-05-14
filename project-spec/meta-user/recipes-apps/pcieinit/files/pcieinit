@@ -1,0 +1,106 @@
+#!/bin/sh
+
+export PATH=$PATH:/sw_5g/running/rru/bin:/sw_5g/running/rru/cfg
+#TDD 100MHz
+echo "Start TDD at 100MHz"
+echo "Start TDD"
+
+
+#Auto start RoE in background
+echo "Start RoE in background"
+# /usr/bin/xroe-startup.sh slave vanvt21 &
+
+# CFG_DIR=/sw_5g/running/rru/cfg
+
+# bandwidth=100000000
+# if [ -f ${CFG_DIR}/bandwidth.cfg ]; then
+# 	bandwidth=`cat ${CFG_DIR}/bandwidth.cfg`
+# fi
+
+# echo "Bandwidth : ${bandwidth}hz";
+# if [ $bandwidth -ge 10000000 ] && [ $bandwidth -le 100000000 ]; then
+# 	echo "No Config"
+# else
+# 	bwstr=$((bandwidth/1000000))
+# 	echo "Failed to config bandwidth = ${bwstr}Mhz"
+# 	echo "Using default config as bandwidth = 10Mhz"
+# fi
+
+# bwstr=$((bandwidth/1000000))
+
+#Check mode then load suitalble FPGA bitstream
+#There is only two option
+#1: Normal mode, sometimes this mode doesn't need to load FPGA bitstream
+#   because it's using default bitstream
+#2: Loopback mode
+# mode=SISO
+# if [ -f ${CFG_DIR}/mode.cfg ]; then
+#     mode=`cat ${CFG_DIR}/mode.cfg`
+# fi
+# echo "Mode: ${mode}";
+#if [ "$mode" == "MIMO" ] || [ "$mode" == "SISO" ]; then
+#    tarfile="${CFG_DIR}/bitstream/${bwstr}mhz.tar.gz"; \
+#elif [ "$mode" == "loopback" ]; then
+#    tarfile="${CFG_DIR}/bitstream/loopback.tar.gz"; \
+#fi
+
+# freq=3750000000
+# if [ -f ${CFG_DIR}/frequency.cfg ]; then
+# 	freq=`cat ${CFG_DIR}/frequency.cfg`
+# fi
+# echo "Frequency : ${freq}hz";
+
+# echo "Configuring LMK05028 from userspace"
+# lmkconfig
+#cd /sys/class/gpio/
+#echo 416 > export
+#cd gpio416
+#echo out > direction
+#echo 1 > value
+# gpio-test 416 on
+# gpio-test 417 on 
+# poke 0x83000000 0x96000
+# poke 0x83000004 1
+# poke 0x83000008 0xf000
+# poke 0x8300000c 0x1000
+# poke 0x83000010 0x160
+# poke 0x83000014 0x120
+# poke 0x83000018 3
+# poke 0x8300001c 1
+# poke 0x83000020 2
+# poke 0x83000024 0
+# poke 0x83000028 12
+
+# poke 0x83100000 0x96000
+# poke 0x83100004 1
+# poke 0x83100008 0xf000
+# poke 0x8310000c 0x1000
+# poke 0x83100010 0x160
+# poke 0x83100014 0x120
+# poke 0x83100018 3
+# poke 0x8310001c 1
+# poke 0x83100020 10
+# poke 0x83100024 3
+# poke 0x83100028 1
+# gpio-test 417 off
+# dpdtool init
+
+cd /sys/class/gpio/
+echo 438 > export
+cd gpio438
+echo out > direction
+echo 1 > value
+
+#cfg delay 206
+poke 0x80001008 9330
+
+#reset fifo 206
+poke 0x80001008 9870
+
+poke 0x80001004 0x1
+poke 0x80001014 0x0
+poke 0x80001014 0x1
+poke 0x80001004 0x0
+
+# ifconfig eth0 192.168.120.16
+# ifconfig eth0 up

@@ -1,0 +1,102 @@
+#!/usr/bin/env python
+import rrupy
+import os
+from ctypes import sizeof, memmove, byref as _byref
+RRUEEPROM = '/sys/devices/platform/amba/ff020000.i2c/i2c-0/i2c-9/9-0054/eeprom'
+RRU_HW_DATA = '/sw_5g/running/rru/data/rru_hw.dat'
+def set_info(hw):
+	f_hw_data = open(RRU_HW_DATA, 'wb')
+	f_hw_data.write(hw)
+	f_hw_data.close()
+def hw_default(hw):
+	hw.id = 'CCID'
+	hw.major = '1'
+	hw.minor = '0'
+	hw.mac_count = '4'
+	hw.mac_flag = 'F'
+	# for x in xrange(4):
+	# 	for y in xrange(6):
+	# 		hw.mac[x][y] = chr(65 + x + y)
+	hw.crc = 10
+	# for i in xrange(4):
+	# 	hw.calibpa.data[i].dpd_calib = 63.0
+	# 	hw.calibpa.data[i].gain = 0
+	# 	hw.calibpa.data[i].digital_gain = 0
+	# 	hw.calibpa.data[i].current_calib = 6000
+	# 	hw.calibvswr.data[i].a = -75.0
+	# 	hw.calibvswr.data[i].b = 225.0
+	# 	hw.calibvswr.data[i].c = -18.0
+	set_info(hw)
+def load_hw_info_to_file():
+	hw = rrupy.hw_info()
+	print('Load hardware info to file')
+	# for i in range(2):
+	# 	hw.calibpa.data[i].gain = 0x00
+	# 	hw.calibpa.data[i].dpd_calib = 58.0
+	if os.access(RRUEEPROM, os.R_OK):
+		try:
+			f_eeprom = open(RRUEEPROM, 'rb')
+		except IOError:
+			print('Cannot open eeprom file')
+			print('Set hardware default')
+			hw_default(hw)
+			return 1
+		readdata = f_eeprom.read(sizeof(rrupy.hw_info))
+		if readdata == '':
+			print('No data in eeprom')
+			print('Set hardware default')
+			hw_default(hw)
+			f_eeprom.close()
+			return 1
+	else:
+		print('There is no eeprom found on board')
+		print('Set hardware default')
+		hw_default(hw)
+		return 1
+	memmove(_byref(hw), readdata, sizeof(rrupy.hw_info))
+	hw.id = 'CCID'
+	hw.major = '1'
+	hw.minor = '0'
+	hw.mac_count = '4'
+	hw.mac_flag = 'F'
+	# for x in xrange(4):
+	# 	for y in xrange(6):
+	# 		hw.mac[x][y] = chr(65 + x + y)
+	hw.crc = 10
+	# for i in xrange(4):
+	# 	hw.calibpa.data[i].dpd_calib = 63.0
+	# 	hw.calibpa.data[i].gain = 0
+	# 	hw.calibpa.data[i].digital_gain = 0
+	# 	hw.calibpa.data[i].current_calib = 6000
+	# 	hw.calibvswr.data[i].a = -75.0
+	# 	hw.calibvswr.data[i].b = 225.0
+	# 	hw.calibvswr.data[i].c = -18.0
+	set_info(hw)
+	f_eeprom.close()
+def main():
+	rrupy.rru_open_device()
+	#Set Linux_ON pin
+	ret = rrupy.set_gpio_state(22, 1)
+	if ret:
+		print('Cannot set pin LINUX_OK')
+	else:
+		print('LINUX_OK is set')
+	runtime_cfg = rrupy.rru_runtime_config()
+	rrupy.rru_self_test()
+	load_hw_info_to_file()
+	ret = rrupy.get_rru_runtime_config(_byref(runtime_cfg))
+	if ret < 0:
+		print('Failed to get run time configuration')
+		return 0
+	if runtime_cfg.mode == 0:
+		print('MODE: SISO')
+		if runtime_cfg.bandwidth == 100000000:
+			print('Bandwidth: %d' % runtime_cfg.bandwidth)
+	elif runtime_cfg.mode == 1:
+		print('MODE: MIMO')
+		if runtime_cfg.bandwidth == 100000000:
+			print('Bandwidth: %d' % runtime_cfg.bandwidth)
+	
+	rrupy.rru_close_device()
+if __name__ == '__main__':
+	main()

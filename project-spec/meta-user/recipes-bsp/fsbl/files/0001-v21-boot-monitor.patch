@@ -1,0 +1,436 @@
+From 897cffe3c4735dc3fd830e9d07c74651028d3b4a Mon Sep 17 00:00:00 2001
+From: cuongpn6 <cuongpn6@vttek.vn>
+Date: Mon, 16 Mar 2020 11:48:16 +0700
+Subject: [PATCH] v21
+
+---
+ lib/sw_apps/zynqmp_fsbl/src/xfsbl_config.h       |   2 +-
+ lib/sw_apps/zynqmp_fsbl/src/xfsbl_handoff.c      |  13 ++
+ lib/sw_apps/zynqmp_fsbl/src/xfsbl_hooks.c        |  48 ++++++++
+ lib/sw_apps/zynqmp_pmufw/src/xpfw_config.h       |  13 +-
+ lib/sw_apps/zynqmp_pmufw/src/xpfw_core.c         |   6 +-
+ lib/sw_apps/zynqmp_pmufw/src/xpfw_default.h      |   4 +
+ lib/sw_apps/zynqmp_pmufw/src/xpfw_main.c         |   2 +
+ lib/sw_apps/zynqmp_pmufw/src/xpfw_mod_bm.c       | 149 +++++++++++++++++++++++
+ lib/sw_apps/zynqmp_pmufw/src/xpfw_mod_bm.h       |  32 +++++
+ lib/sw_apps/zynqmp_pmufw/src/xpfw_user_startup.c |   2 +
+ 10 files changed, 265 insertions(+), 6 deletions(-)
+ create mode 100644 lib/sw_apps/zynqmp_pmufw/src/xpfw_mod_bm.c
+ create mode 100644 lib/sw_apps/zynqmp_pmufw/src/xpfw_mod_bm.h
+
+diff --git a/lib/sw_apps/zynqmp_fsbl/src/xfsbl_config.h b/lib/sw_apps/zynqmp_fsbl/src/xfsbl_config.h
+index 434b9c8..028fc96 100644
+--- a/lib/sw_apps/zynqmp_fsbl/src/xfsbl_config.h
++++ b/lib/sw_apps/zynqmp_fsbl/src/xfsbl_config.h
+@@ -134,7 +134,7 @@ extern "C" {
+  */
+ #define FSBL_NAND_EXCLUDE_VAL			(0U)
+ #define FSBL_QSPI_EXCLUDE_VAL			(0U)
+-#define FSBL_SD_EXCLUDE_VAL			(0U)
++#define FSBL_SD_EXCLUDE_VAL				(0U)
+ #define FSBL_SECURE_EXCLUDE_VAL			(0U)
+ #define FSBL_BS_EXCLUDE_VAL				(0U)
+ #define FSBL_SHA2_EXCLUDE_VAL			(1U)
+diff --git a/lib/sw_apps/zynqmp_fsbl/src/xfsbl_handoff.c b/lib/sw_apps/zynqmp_fsbl/src/xfsbl_handoff.c
+index 40e7737..c0916c4 100644
+--- a/lib/sw_apps/zynqmp_fsbl/src/xfsbl_handoff.c
++++ b/lib/sw_apps/zynqmp_fsbl/src/xfsbl_handoff.c
+@@ -567,6 +567,19 @@ void XFsbl_HandoffExit(u64 HandoffAddress, u32 Flags)
+ 	RegVal |= XFSBL_EXEC_COMPLETED;
+ 	XFsbl_Out32(PMU_GLOBAL_GLOB_GEN_STORAGE5, RegVal);
+ 
++	if((Flags == XFSBL_HANDOFFEXIT) || (Flags == XFSBL_HANDOFFEXIT_32)){
++		u32 pers_glob_gen_storage0 = XFsbl_In32(0xFFD80050); 
++		pers_glob_gen_storage0 |= 1U << 1; 
++		XFsbl_Out32(0xFFD80050, pers_glob_gen_storage0);
++	}
++
++	if(Flags == XFSBL_NO_HANDOFFEXIT){
++		u32 pers_glob_gen_storage0 = XFsbl_In32(0xFFD80050);
++		pers_glob_gen_storage0 &= ~(1U << 1); 
++		XFsbl_Out32(0xFFD80050, pers_glob_gen_storage0);
++	}
++
++
+ 	XFsbl_Printf(DEBUG_GENERAL,"Exit from FSBL \n\r");
+ 
+ 	/**
+diff --git a/lib/sw_apps/zynqmp_fsbl/src/xfsbl_hooks.c b/lib/sw_apps/zynqmp_fsbl/src/xfsbl_hooks.c
+index b3cb159..cd8b912 100644
+--- a/lib/sw_apps/zynqmp_fsbl/src/xfsbl_hooks.c
++++ b/lib/sw_apps/zynqmp_fsbl/src/xfsbl_hooks.c
+@@ -51,6 +51,8 @@
+ #include "xfsbl_hw.h"
+ #include "xfsbl_hooks.h"
+ #include "psu_init.h"
++#include "xfsbl_main.h"
++
+ /************************** Constant Definitions *****************************/
+ 
+ /**************************** Type Definitions *******************************/
+@@ -93,6 +95,52 @@ u32 XFsbl_HookBeforeHandoff(u32 EarlyHandoff)
+ 	/**
+ 	 * Add the code here
+ 	 */
++	
++	//u32 must_change_fsbl = 0;
++	// XFsbl_Printf(DEBUG_DETAILED,"XFsbl_HookBeforeHandoff\n\r"); 
++	// u32 pers_glob_gen_storage0 = XFsbl_In32(0xFFD80050); 
++	// pers_glob_gen_storage0 |= 1 << 1; 
++	// XFsbl_Out32(0xFFD80050, pers_glob_gen_storage0);
++	// XTime tEnd = 0;
++	// XTime tCur = 0;
++	// XTime tDiff = 0;
++	// u64 tPerfNs;
++	// u64 tPerfMs = 0;
++	// u64 tPerfMsFrac = 0;
++
++	// #ifdef XFSBL_PERF
++	// 	XTime_GetTime(&tCur);
++	// 	while(1){
++	// 		XTime_GetTime(&tEnd);
++	// 		tDiff = tEnd - tCur;
++	// 		/* Convert tPerf into nanoseconds */
++	// 		tPerfNs = ((double)tDiff / (double)COUNTS_PER_SECOND) * 1e9;
++	// 		tPerfMs = tPerfNs / 1e6;
++	// 		tPerfMsFrac = tPerfNs % (u64)1e6;
++	// 		if(tPerfMs > 10000){
++	// 			u32 pers_glob_gen_storage0 = XFsbl_In32(0xFFD80050);
++	// 			XFsbl_Printf(DEBUG_DETAILED,"PMU_GLOBAL_PERS_GLOB_GEN_STORAGE0 = %lu\n\r", pers_glob_gen_storage0);
++	// 			if(pers_glob_gen_storage0 & 0x01 == 1){
++	// 				XFsbl_Printf(DEBUG_DETAILED,"PMUFW is ready\n\r");
++	// 			}
++	// 			else{
++	// 				XFsbl_Printf(DEBUG_DETAILED,"PMUFW is not ready\n\r");
++	// 				must_change_fsbl = 0;
++	// 			}
++	// 			pers_glob_gen_storage0 |= 1 << 1; 
++	// 			XFsbl_Out32(0xFFD80050, pers_glob_gen_storage0); 
++	// 			pers_glob_gen_storage0 = XFsbl_In32(0xFFD80050); 
++	// 			XFsbl_Printf(DEBUG_DETAILED,"PMU_GLOBAL_PERS_GLOB_GEN_STORAGE0 = %lu\n\r", pers_glob_gen_storage0);
++	// 			break;
++	// 		}
++	// 	}
++	// #else
++	// 	XFsbl_Printf(DEBUG_DETAILED,"XFsbl not support wait PMUFW\n\r");
++	// #endif
++
++	// if(must_change_fsbl){
++	// 	Status = XFSBL_ERROR_HOOK_BEFORE_HANDOFF;
++	// }
+ 
+ 	return Status;
+ }
+diff --git a/lib/sw_apps/zynqmp_pmufw/src/xpfw_config.h b/lib/sw_apps/zynqmp_pmufw/src/xpfw_config.h
+index de45e52..dcb6f8b 100644
+--- a/lib/sw_apps/zynqmp_pmufw/src/xpfw_config.h
++++ b/lib/sw_apps/zynqmp_pmufw/src/xpfw_config.h
+@@ -33,8 +33,8 @@
+ 
+ /* PMUFW print levels */
+ #define XPFW_PRINT_VAL (1U)
+-#define XPFW_DEBUG_ERROR_VAL (0U)
+-#define XPFW_DEBUG_DETAILED_VAL (0U)
++#define XPFW_DEBUG_ERROR_VAL (1U)
++#define XPFW_DEBUG_DETAILED_VAL (1U)
+ 
+ /**
+  * PMUFW Debug options
+@@ -107,11 +107,12 @@
+  * 	                       GPO1[2] is the board power line.
+  * 	- BOARD_SHUTDOWN_PIN_STATE : Tells what should be the state of board power
+  * 	                             line when system shutdown request comes
++ * 	- ENABLE_BM_VAL : This macro enables BM (Boot Monitor) for RRU
+  */
+ 
+ #define	ENABLE_PM_VAL					(1U)
+ #define	ENABLE_EM_VAL					(0U)
+-#define	ENABLE_SCHEDULER_VAL			(0U)
++#define	ENABLE_SCHEDULER_VAL			(1U)
+ #define	ENABLE_RECOVERY_VAL				(0U)
+ #define	ENABLE_RECOVERY_RESET_SYSTEM_VAL		(0U)
+ #define	ENABLE_RECOVERY_RESET_PS_ONLY_VAL		(0U)
+@@ -141,6 +142,8 @@
+ 
+ #define SECURE_ACCESS_VAL		(0U)
+ 
++#define	ENABLE_BM_VAL					(1U)
++
+ #if ENABLE_PM_VAL
+ #define ENABLE_PM
+ #endif
+@@ -262,4 +265,8 @@
+ #define ENABLE_POS_QSPI
+ #endif
+ 
++#if ENABLE_BM_VAL
++#define ENABLE_BM
++#endif
++
+ #endif /* XPFW_CONFIG_H_ */
+diff --git a/lib/sw_apps/zynqmp_pmufw/src/xpfw_core.c b/lib/sw_apps/zynqmp_pmufw/src/xpfw_core.c
+index 0d42466..5d2b5f1 100644
+--- a/lib/sw_apps/zynqmp_pmufw/src/xpfw_core.c
++++ b/lib/sw_apps/zynqmp_pmufw/src/xpfw_core.c
+@@ -32,6 +32,8 @@
+ #include "xpfw_interrupts.h"
+ #include "xpfw_ipi_manager.h"
+ #include "pmu_lmb_bram.h"
++#include "csu.h"
++#include "crl_apb.h"
+ 
+ #define CORE_IS_READY	((u32)0x5AFEC0DEU)
+ #define CORE_IS_DEAD	((u32)0xDEADBEAFU)
+@@ -284,8 +286,8 @@ XStatus XPfw_CoreLoop(void)
+ 		#ifdef SLEEP_WHEN_IDLE
+ 				/*Sleep. Will be waken up when a interrupt occurs*/
+ 				mb_sleep();
+-		#endif
+-
++		#endif		
++		
+ 		#ifdef ENABLE_SCHEDULER
+ 			if(TRUE == CorePtr->Scheduler.Enabled){
+ 				(void)XPfw_SchedulerProcess(&CorePtr->Scheduler);
+diff --git a/lib/sw_apps/zynqmp_pmufw/src/xpfw_default.h b/lib/sw_apps/zynqmp_pmufw/src/xpfw_default.h
+index 13a7ada..a12722a 100644
+--- a/lib/sw_apps/zynqmp_pmufw/src/xpfw_default.h
++++ b/lib/sw_apps/zynqmp_pmufw/src/xpfw_default.h
+@@ -95,6 +95,10 @@
+ 
+ #define FSBL_COMPLETION			1U
+ 
++#define CHECK_BOOT_PROCESS_INTERVAL	5000U
++#define CHECK_BOOT_PROCESS_TIMEOUT	36U
++/* So the total wait time to check boot process is 5s * 36 = 180s */
++
+ /* Handler Table Structure */
+ typedef void (*VoidFunction_t)(void);
+ struct HandlerTable{
+diff --git a/lib/sw_apps/zynqmp_pmufw/src/xpfw_main.c b/lib/sw_apps/zynqmp_pmufw/src/xpfw_main.c
+index 029cbef..a0793e7 100644
+--- a/lib/sw_apps/zynqmp_pmufw/src/xpfw_main.c
++++ b/lib/sw_apps/zynqmp_pmufw/src/xpfw_main.c
+@@ -64,6 +64,8 @@ XStatus XPfw_Main(void)
+ 	/* Call the User Start Up Code to add Mods, Handlers and Tasks */
+ 	XPfw_UserStartUp();
+ 
++	XPfw_UtilRMW(0xFFD80050, 0xFFFFFFFF, 0x0);
++
+ 	/* Configure the Modules. Calls CfgInit Handlers of all modules */
+ 	Status = XPfw_CoreConfigure();
+ 
+diff --git a/lib/sw_apps/zynqmp_pmufw/src/xpfw_mod_bm.c b/lib/sw_apps/zynqmp_pmufw/src/xpfw_mod_bm.c
+new file mode 100644
+index 0000000..2b7cf70
+--- /dev/null
++++ b/lib/sw_apps/zynqmp_pmufw/src/xpfw_mod_bm.c
+@@ -0,0 +1,149 @@
++/******************************************************************************
++* Copyright (C) 2015 - 2018 Xilinx, Inc.  All rights reserved.
++*
++* Permission is hereby granted, free of charge, to any person obtaining a copy
++* of this software and associated documentation files (the "Software"), to deal
++* in the Software without restriction, including without limitation the rights
++* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
++* copies of the Software, and to permit persons to whom the Software is
++* furnished to do so, subject to the following conditions:
++*
++* The above copyright notice and this permission notice shall be included in
++* all copies or substantial portions of the Software.
++*
++* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
++* XILINX  BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
++* WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF
++* OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
++* SOFTWARE.
++*
++* Except as contained in this notice, the name of the Xilinx shall not be used
++* in advertising or otherwise to promote the sale, use or other dealings in
++* this Software without prior written authorization from Xilinx.
++******************************************************************************/
++
++#include "xpfw_default.h"
++#include "xpfw_module.h"
++#include "xpfw_error_manager.h"
++#include "xpfw_resets.h"
++#include "xpfw_events.h"
++#include "xpfw_core.h"
++#include "xpfw_rom_interface.h"
++#include "xpfw_xpu.h"
++#include "xpfw_restart.h"
++#include "xpfw_mod_bm.h"
++#include "pmu_lmb_bram.h"
++#include "csu.h"
++#include "crl_apb.h"
++
++#ifdef ENABLE_BM
++const XPfw_Module_t *BmModPtr;
++
++/****************************************************************************/
++/**
++ * @brief  This scheduler task checks for RRU Boot Process
++ *
++ * @param  None.
++ *
++ * @return None.
++ *
++ * @note   None.
++ *
++ ****************************************************************************/
++static void CheckRRUBootProcess(void)
++{	
++	s32 Status;
++	u32 monitor_end = XPfw_Read32(0xFFD80050) & 0x20; 
++	u32 count = (u32)((XPfw_Read32(0xFFD80050) & 0xFFFF0000) >> 16U);
++		
++	if((count > CHECK_BOOT_PROCESS_TIMEOUT)  && (monitor_end == 0U)){ //XPfw_UtilRMW(0xFFD80054, 0xFFFFFFFF, count);
++		u32 reg = Xil_In32(0xFFD80050);
++		u32 fsbl_ok = (reg & 0x02 )>> 1;
++		u32 uboot_handle = (reg & 0x04 )>> 2;
++		u32 uboot_ok = (reg & 0x08 )>> 3;
++		u32 linux_ok = (reg & 0x10 )>> 4;
++		if(uboot_handle == 0U){
++			if((fsbl_ok == 0U)||(uboot_ok == 0U)||(linux_ok == 0U)){
++
++				XPfw_UtilRMW(0xFFD80050, 0xFFFFFFFF, 0x0);
++
++				//XPfw_Printf(DEBUG_DETAILED,"PMUFW resets system\r\n");
++				u32 MultiBootValue = XPfw_Read32(CSU_MULTI_BOOT);
++
++				XPfw_Write32(CSU_MULTI_BOOT, MultiBootValue+1U);
++				u32 RegValue;
++				
++				RegValue = XPfw_Read32(CRL_APB_RESET_CTRL);
++				XPfw_Write32(CRL_APB_RESET_CTRL, RegValue|CRL_APB_RESET_CTRL_SOFT_RESET_MASK);
++                
++				
++				while(1) {
++					;
++				}
++			}
++			else{
++				monitor_end = 1U;
++				XPfw_UtilRMW(0xFFD80050, 0x20, (u32)(monitor_end << 5U));
++				Status = XPfw_CoreRemoveTask(BmModPtr, CHECK_BOOT_PROCESS_INTERVAL, CheckRRUBootProcess);
++				if (XST_FAILURE == Status) {
++					// XPfw_Printf(DEBUG_ERROR,"EM (MOD-%d):Removing EM config task "
++					// 		"failed.", EmModPtr->ModId);
++				}
++			}
++		}
++		else{
++			monitor_end = 1U;
++			XPfw_UtilRMW(0xFFD80050, 0x20, (u32)(monitor_end << 5U));
++			Status = XPfw_CoreRemoveTask(BmModPtr, CHECK_BOOT_PROCESS_INTERVAL, CheckRRUBootProcess);
++			if (XST_FAILURE == Status) {
++				// XPfw_Printf(DEBUG_ERROR,"EM (MOD-%d):Removing EM config task "
++				// 		"failed.", EmModPtr->ModId);
++			}
++		}
++	}
++
++	if(monitor_end == 0U){
++		count = count + 1U;
++		XPfw_UtilRMW(0xFFD80050, 0xFFFF0000, (u32)(count<<16U));
++		XPfw_UtilRMW(0xFFD80050, 0x20, (u32)(monitor_end << 5U));
++		XPfw_UtilRMW(0xFFD80050, 0x1, 0x1);
++	}
++
++}
++
++/* CfgInit Handler */
++static void BmCfgInit(const XPfw_Module_t *ModPtr, const u32 *CfgData,
++		u32 Len)
++{
++	u32 ErrId = 0U;
++	s32 Status;
++
++
++	/*
++	 * Schedule a task to check for FSBL completion to enable
++	 * PLL lock errors and FPD WDT error
++	 */
++	Status = XPfw_CoreScheduleTask(BmModPtr, CHECK_BOOT_PROCESS_INTERVAL,
++			CheckRRUBootProcess);
++	if (XST_FAILURE == Status) {
++		//XPfw_Printf(DEBUG_ERROR,"EM (MOD-%d):Scheduling EM Cfg task failed.",
++		//		ModPtr->ModId);
++	}
++}
++
++/*
++ * Create a Mod and assign the Handlers. We will call this function
++ * from XPfw_UserStartup()
++ */
++void ModBmInit(void)
++{
++	BmModPtr = XPfw_CoreCreateMod();
++
++	(void) XPfw_CoreSetCfgHandler(BmModPtr, BmCfgInit);
++}
++
++#else /* ENABLE_BM */
++void ModBmInit(void) { }
++#endif /* ENABLE_BM */
+diff --git a/lib/sw_apps/zynqmp_pmufw/src/xpfw_mod_bm.h b/lib/sw_apps/zynqmp_pmufw/src/xpfw_mod_bm.h
+new file mode 100644
+index 0000000..5089223
+--- /dev/null
++++ b/lib/sw_apps/zynqmp_pmufw/src/xpfw_mod_bm.h
+@@ -0,0 +1,32 @@
++/******************************************************************************
++* Copyright (C) 2015 Xilinx, Inc.  All rights reserved.
++*
++* Permission is hereby granted, free of charge, to any person obtaining a copy
++* of this software and associated documentation files (the "Software"), to deal
++* in the Software without restriction, including without limitation the rights
++* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
++* copies of the Software, and to permit persons to whom the Software is
++* furnished to do so, subject to the following conditions:
++*
++* The above copyright notice and this permission notice shall be included in
++* all copies or substantial portions of the Software.
++*
++* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
++* XILINX  BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
++* WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF
++* OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
++* SOFTWARE.
++*
++* Except as contained in this notice, the name of the Xilinx shall not be used
++* in advertising or otherwise to promote the sale, use or other dealings in
++* this Software without prior written authorization from Xilinx.
++******************************************************************************/
++
++#ifndef XPFW_MOD_BM_H_
++#define XPFW_MOD_BM_H_
++
++void ModBmInit(void);
++
++#endif /* XPFW_MOD_BM_H_ */
+diff --git a/lib/sw_apps/zynqmp_pmufw/src/xpfw_user_startup.c b/lib/sw_apps/zynqmp_pmufw/src/xpfw_user_startup.c
+index 2950976..f5d2bb2 100644
+--- a/lib/sw_apps/zynqmp_pmufw/src/xpfw_user_startup.c
++++ b/lib/sw_apps/zynqmp_pmufw/src/xpfw_user_startup.c
+@@ -40,6 +40,7 @@
+ #include "xpfw_mod_sched.h"
+ #include "xpfw_mod_stl.h"
+ #include "xpfw_mod_wdt.h"
++#include "xpfw_mod_bm.h"
+ 
+ #if defined (XPAR_LPD_IS_CACHE_COHERENT) || defined (XPAR_FPD_IS_CACHE_COHERENT) || defined (XPAR_PL_IS_CACHE_COHERENT)
+ /*****************************************************************************
+@@ -78,4 +79,5 @@ void XPfw_UserStartUp(void)
+ 	ModDapInit();
+ 	ModLegacyInit();
+ 	ModWdtInit();
++	ModBmInit();
+ }
+-- 
+2.7.4
+

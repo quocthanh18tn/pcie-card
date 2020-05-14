@@ -1,0 +1,151 @@
+#!/bin/sh
+
+function verify_res()
+{
+	if [[ "$2" == "0" ]]; then
+		echo "$1 OK"
+	else
+		echo "$1 FAILED (-$((1+255-$2)))"
+	fi
+}
+
+#gpio-test 104 on
+#sleep 1
+#gpio-test 104 off
+#sleep 1
+#gpio-test 104 on
+#verify_res TEST_LED4 0
+
+# SFP 1
+D_NAME="SFP-1"
+i2c-test CPLD-i2c_mux /dev/i2c-0 0x78 0x01
+i2c-test $D_NAME /dev/i2c-0 0x50 0x14 -r 16 -c 0x49 0x46
+verify_res $D_NAME $?
+
+D_NAME="SFP-2"
+i2c-test CPLD-i2c_mux /dev/i2c-0 0x78 0x02
+i2c-test $D_NAME /dev/i2c-0 0x50 0x14 -r 16 -c 0x49 0x4E
+verify_res $D_NAME $?
+
+D_NAME="SFP-3"
+i2c-test CPLD-i2c_mux /dev/i2c-0 0x78 0x03
+i2c-test $D_NAME /dev/i2c-0 0x50 0x14 -r 16 -c 0x49 0x4E
+verify_res $D_NAME $?
+
+D_NAME="SFP-4"
+i2c-test CPLD-i2c_mux /dev/i2c-0 0x78 0x04
+i2c-test $D_NAME /dev/i2c-0 0x50 0x14 -r 16 -c 0x49 0x4E
+verify_res $D_NAME $?
+
+# LMK09028
+D_NAME="LMK09028-clk_clean"
+#gpio-test 131 on
+i2c-test CPLD-i2c_mux /dev/i2c-0 0x78 0x05
+i2c-test $D_NAME /dev/i2c-0 0x60 0x00 0x00 -r 1 -c 0x10
+verify_res $D_NAME $?
+
+# PA
+#D_NAME="PA"
+#i2c-test CPLD-i2c_mux /dev/i2c-0 0x78 0x06
+#i2c-test $D_NAME /dev/i2c-0 0x55 0x02 0x01 0x00
+#i2c-test $D_NAME /dev/i2c-0 0x55 -r 1
+#verify_res $D_NAME $?
+
+# AT24C16D
+D_NAME="AT24C16D-eeprom"
+i2c-test CPLD-i2c_mux /dev/i2c-0 0x78 0x07
+i2c-test $D_NAME /dev/i2c-0 0x50 0x05 0xAB
+sleep 1
+i2c-test $D_NAME /dev/i2c-0 0x50 0x05 -r 1 -c 0xAB
+verify_res $D_NAME $?
+
+# ADT7420
+D_NAME="ADT7420-temp_sensor"
+i2c-test CPLD-i2c_mux /dev/i2c-0 0x78 0x08
+i2c-test $D_NAME /dev/i2c-0 0x48 0x03 0xAB
+i2c-test $D_NAME /dev/i2c-0 0x48 0x03 -r 1 -c 0xAB
+verify_res $D_NAME $?
+
+# INA226 current sense 12V
+D_NAME="INA226-12v"
+i2c-test CPLD-i2c_mux /dev/i2c-0 0x78 0x09
+i2c-test $D_NAME /dev/i2c-0 0x40 0x07 0x20 0x30
+i2c-test $D_NAME /dev/i2c-0 0x40 0x07 -r 2 -c 0x20 0x30
+verify_res $D_NAME $?
+
+# INA226 current sense 28V
+D_NAME="INA226-28v"
+i2c-test CPLD-i2c_mux /dev/i2c-0 0x78 0x0A
+i2c-test $D_NAME /dev/i2c-0 0x40 0x07 0x20 0x30
+i2c-test $D_NAME /dev/i2c-0 0x40 0x07 -r 2 -c 0x20 0x30
+verify_res $D_NAME $?
+
+# INA226 current sense 3V3 VCCO
+D_NAME="INA226-3v3"
+i2c-test CPLD-i2c_mux /dev/i2c-0 0x78 0x0B
+i2c-test $D_NAME /dev/i2c-0 0x40 0x07 0x20 0x30
+i2c-test $D_NAME /dev/i2c-0 0x40 0x07 -r 2 -c 0x20 0x30
+verify_res $D_NAME $?
+
+# INA226 current sense 1V8 VCCAUX
+D_NAME="INA226-1v8_vcaux"
+i2c-test CPLD-i2c_mux /dev/i2c-0 0x78 0x0C
+i2c-test $D_NAME /dev/i2c-0 0x40 0x07 0x20 0x30
+i2c-test $D_NAME /dev/i2c-0 0x40 0x07 -r 2 -c 0x20 0x30
+verify_res $D_NAME $?
+
+# INA226 current sense 1V8 VCCO
+D_NAME="INA226-1v8_vcco"
+i2c-test CPLD-i2c_mux /dev/i2c-0 0x78 0x0D
+i2c-test $D_NAME /dev/i2c-0 0x40 0x07 0x20 0x30
+i2c-test $D_NAME /dev/i2c-0 0x40 0x07 -r 2 -c 0x20 0x30
+verify_res $D_NAME $?
+
+# INA226 current sense 1V2 VMGTAVTT
+D_NAME="INA226-1v2_vmg"
+i2c-test CPLD-i2c_mux /dev/i2c-0 0x78 0x0E
+i2c-test $D_NAME /dev/i2c-0 0x40 0x07 0x20 0x30
+i2c-test $D_NAME /dev/i2c-0 0x40 0x07 -r 2 -c 0x20 0x30
+verify_res $D_NAME $?
+
+# INA226 current sense 1V2 VCCO
+D_NAME="INA226-1v2_vcco"
+i2c-test CPLD-i2c_mux /dev/i2c-0 0x78 0x0F
+i2c-test $D_NAME /dev/i2c-0 0x40 0x07 0x20 0x30
+i2c-test $D_NAME /dev/i2c-0 0x40 0x07 -r 2 -c 0x20 0x30
+verify_res $D_NAME $?
+
+# INA226 current sense 0v9 VMGAVCC
+D_NAME="INA226-0v9_vmg"
+i2c-test CPLD-i2c_mux /dev/i2c-0 0x78 0x10
+i2c-test $D_NAME /dev/i2c-0 0x40 0x07 0x20 0x30
+i2c-test $D_NAME /dev/i2c-0 0x40 0x07 -r 2 -c 0x20 0x30
+verify_res $D_NAME $?
+
+# INA226 current sense 0V85 VCCPSINTLP
+D_NAME="INA226-0v85_vccpintlp"
+i2c-test CPLD-i2c_mux /dev/i2c-0 0x78 0x11
+i2c-test $D_NAME /dev/i2c-0 0x40 0x07 0x20 0x30
+i2c-test $D_NAME /dev/i2c-0 0x40 0x07 -r 2 -c 0x20 0x30
+verify_res $D_NAME $?
+
+# INA226 current sense 0V85 VCCINT
+D_NAME="INA226-0v85_vccpint"
+i2c-test CPLD-i2c_mux /dev/i2c-0 0x78 0x12
+i2c-test $D_NAME /dev/i2c-0 0x40 0x07 0x20 0x30
+i2c-test $D_NAME /dev/i2c-0 0x40 0x07 -r 2 -c 0x20 0x30
+verify_res $D_NAME $?
+
+# INA226 current sense 0V85 VCCPSINTFP
+D_NAME="INA226-0v85_vccpintfp"
+i2c-test CPLD-i2c_mux /dev/i2c-0 0x78 0x13
+i2c-test $D_NAME /dev/i2c-0 0x40 0x07 0x20 0x30
+i2c-test $D_NAME /dev/i2c-0 0x40 0x07 -r 2 -c 0x20 0x30
+verify_res $D_NAME $?
+
+# INA226 current sense 28V PA
+D_NAME="INA226-28v_pa"
+i2c-test CPLD-i2c_mux /dev/i2c-0 0x78 0x14
+i2c-test $D_NAME /dev/i2c-0 0x40 0x07 0x20 0x30
+i2c-test $D_NAME /dev/i2c-0 0x40 0x07 -r 2 -c 0x20 0x30
+verify_res $D_NAME $?

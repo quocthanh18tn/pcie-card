@@ -1,0 +1,10 @@
+//arch = zynqmp; split = false; format = BIN
+the_ROM_image:
+{
+	[fsbl_config]a53_x64
+	[bootloader]D:\Huyvd4\Vivado\BRING_UP\BOOT\zynqmp_fsbl.elf
+	[pmufw_image]D:\Huyvd4\Vivado\BRING_UP\BOOT\pmufw.elf
+	[destination_cpu = a53-0, exception_level = el-3, trustzone]D:\Huyvd4\Vivado\BRING_UP\BOOT\bl31.elf
+	[destination_cpu = a53-0, exception_level = el-2]D:\Huyvd4\Vivado\BRING_UP\BOOT\u-boot.elf
+	[destination_device = pl]D:\Huyvd4\Vivado\BRING_UP\BOOT\pcie_card_offload\pcie_card_top.bit
+}

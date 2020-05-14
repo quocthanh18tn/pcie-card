@@ -1,0 +1,422 @@
+/include/ "system-conf.dtsi"
+/ {
+	model = "ZynqMP ZCU102 Rev1.0";
+    compatible = "xlnx,zynqmp-zcu102-rev1.0", "xlnx,zynqmp-zcu102", "xlnx,zynqmp";
+
+    /*
+    chosen {
+		bootargs = "earlycon console=ttyPS0,115200 clk_ignore_unused  uio_pdrv_genirq.of_id=generic-uio debug";
+		stdout-path = "serial0:115200n8";
+	};
+	*/
+    
+    chosen {
+       bootargs = "earlycon clk_ignore_unused cpuidle.off=1 uio_pdrv_genirq.of_id=generic-uio mem=2G root=/dev/mtdblock3 rw rootfstype=jffs2";
+    };
+    
+
+    aliases {
+		ethernet0 = &gem0;
+		
+		i2c0 = &i2c0;
+		serial0 = &uart0;
+		serial1 = &uart1;
+		spi0 = &qspi;
+		spi1 = &spi0;
+		spi2 = &spi1;
+
+	};
+
+	fpga_axi: fpga-axi@0 {
+		interrupt-parent = <&gic>;
+		compatible = "simple-bus";
+		#address-cells = <0x1>;
+		#size-cells = <0x1>;
+		ranges = <0 0 0 0xffffffff>;
+
+		fake_fpga_clk: fake_fpga_clk {
+			#clock-cells = <0x0>;
+			clock-frequency = <245760000>;
+			compatible = "fixed-clock";
+		};
+
+	};
+
+};
+
+&spi0 {
+	status = "okay";
+};
+
+&i2c0 {
+	clock-frequency = <100000>;
+	scl-gpios = <&gpio 42 0>;
+	sda-gpios = <&gpio 43 0>;
+	/delete-node/ gpio@20;
+	/delete-node/ gpio@21;
+	/delete-node/ i2c-mux@75;		
+	// Must add CPLD I2C mux here
+
+	pca_9547@73 {
+		compatible = "nxp,pca9547";
+		reg = <0x73>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		i2c@0 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x00>;
+
+			sfp_1_vendor: sfp_1_vendor@50 {
+				compatible = "viettel,sfp_1_vendor";
+				reg = <0x50>; 
+			};
+			sfp_1_diagnostic: sfp_1_diagnostic@51 {
+				compatible = "viettel,sfp_1_diagnostic";
+				reg = <0x51>; 
+			};
+		};
+
+		i2c@1 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x01>;
+
+			sfp_2_vendor: sfp_2_vendor@50 {
+				compatible = "viettel,sfp_2_vendor";
+				reg = <0x50>; 
+			};
+			sfp_2_diagnostic: sfp_2_diagnostic@51 {
+				compatible = "viettel,sfp_2_diagnostic";
+				reg = <0x51>; 
+			};
+		};
+
+		i2c@2 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x02>;
+
+			sfp_3_vendor: sfp_3_vendor@50 {
+				compatible = "viettel,sfp_3_vendor";
+				reg = <0x50>; 
+			};
+			sfp_3_diagnostic: sfp_3_diagnostic@51 {
+				compatible = "viettel,sfp_3_diagnostic";
+				reg = <0x51>; 
+			};
+		};
+
+		i2c@3 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x03>;
+
+			sfp_4_vendor: sfp_4_vendor@50 {
+				compatible = "viettel,sfp_4_vendor";
+				reg = <0x50>; 
+			};
+			sfp_4_diagnostic: sfp_4_diagnostic@51 {
+				compatible = "viettel,sfp_4_diagnostic";
+				reg = <0x51>; 
+			};
+		};
+
+		i2c@4 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x04>;
+
+			lmk05028@60 {
+				compatible = "ti,lmk05028";
+				reg = <0x60>;
+				reset-gpios = <&gpio 131 0>;
+			};
+		};
+		
+	};
+};
+
+&qspi {
+	is-dual = <0>;
+	flash0: flash@0 {
+		compatible = "n25q512a","micron,m25p80";
+		spi-tx-bus-width = <0x4>;
+		spi-rx-bus-width = <0x4>;
+		spi-max-frequency = <62000000>;
+	};
+};
+/* 
+	luu y cho nay khi bat ethernet
+
+ */
+&gem3 {
+	/delete-property/ phy-handle;
+	/delete-property/ pinctrl-names;
+	/delete-property/ pinctrl-0;
+    /delete-node/ phy@c;
+};
+
+&gem0 {
+    phy-handle = <&phy7>;
+	local-mac-address = [00 0b 35 00 22 01];
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_gem0_default>;
+	
+	mdio {
+		#address-cells = <1>;
+		#size-cells = <0>;    
+	    phy7: phy@7 {
+			device_type = "ethernet-phy";
+	        reg = <0x7>;
+	        rxc-skew-ps = <3000>;
+			rxdv-skew-ps = <0>;
+			txc-skew-ps = <3000>;
+			txen-skew-ps = <0>;
+	    };
+    };
+
+	/*
+	/delete-property/ phy-handle;
+    /delete-node/ phy@c;
+			compatible = "micrel,ksz9031";
+	phy-reset-gpio = <&gpio 59 0>;
+	phy-reset-active-low;
+	phy-handle = <&phy0>;
+	phy-mode = "rgmii-id";
+	mdio {
+		phy0: ethernet-phy@0 {
+			rxc-skew-ps = <3000>;
+			rxdv-skew-ps = <0>;
+			txc-skew-ps = <3000>;
+			txen-skew-ps = <0>;
+	        ti,rx-internal-delay = <0x8>;
+			ti,tx-internal-delay = <0xa>;
+			ti,fifo-depth = <0x1>;
+			ti,rxctrl-strap-worka;
+			reg = <0>;
+		};
+	};
+    phy0: phy@0 {
+        compatible = "micrel,ksz9031";
+        device_type = "ethernet-phy";
+        rxc-skew-ps = <1740>;
+        txc-skew-ps = <1860>;
+        txen-skew-ps = <660>;
+        rxdv-skew-ps = <900>;
+        rxd0-skew-ps = <900>;
+        rxd1-skew-ps = <900>;
+        rxd2-skew-ps = <900>;
+        rxd3-skew-ps = <900>;
+        txd0-skew-ps = <0>;
+        txd1-skew-ps = <0>;
+        txd2-skew-ps = <0>;
+        txd3-skew-ps = <0>;
+        reg = <0>;
+        ti,rx-internal-delay = <0x8>;
+		ti,tx-internal-delay = <0xa>;
+		ti,fifo-depth = <0x1>;
+		ti,rxctrl-strap-worka;
+    };
+    */
+};
+
+
+/* device tree from pinctrl-8T8R */
+
+
+/* disable can */
+&can1 {
+	status = "disable";
+	/delete-property/ pinctrl-0;
+	/delete-property/ pinctrl-names;
+};
+
+/* disable some zcu102 gpios */
+&gpio {
+	/delete-property/ pinctrl-0;
+	/delete-property/ pinctrl-names;
+};
+
+/* disable SD when booting by flash */
+&sdhci1 {
+	status = "disable";
+	/delete-property/ pinctrl-0;
+	/delete-property/ pinctrl-names;
+	/delete-property/ no-1-8-v;
+};
+
+/* disable USB */
+&usb0 {
+	status = "disable";
+	/delete-property/ pinctrl-0;
+	/delete-property/ pinctrl-names;
+};
+
+
+&pinctrl0 {
+	status = "okay";
+	/delete-node/ can1-default;
+	/delete-node/ gpio-default;
+	/delete-node/ sdhci1-default;
+	/delete-node/ usb0-default;
+	/delete-node/ gem3-default;
+
+	pinctrl_gem0_default: gem0-default {
+		mux {
+			function = "ethernet0";
+			groups = "ethernet0_0_grp";
+		};
+
+		conf {
+			groups = "ethernet0_0_grp";
+			slew-rate = <1>;
+			io-standard = <1>;
+		};
+
+		conf-rx {
+			pins = "MIO32", "MIO33", "MIO34", "MIO35", "MIO36",
+									"MIO37";
+			bias-high-impedance;
+			low-power-disable;
+		};
+
+		conf-tx {
+			pins = "MIO26", "MIO27", "MIO28", "MIO29", "MIO30",
+									"MIO31";
+			bias-disable;
+			low-power-enable;
+		};
+
+		mux-mdio {
+			function = "mdio0";
+			groups = "mdio0_0_grp";
+		};
+
+		conf-mdio {
+			groups = "mdio0_0_grp";
+			slew-rate = <1>;
+			io-standard = <1>;
+			bias-disable;
+		};
+	};
+
+	pinctrl_i2c0_default: i2c0-default {
+		mux {
+			groups = "i2c0_10_grp";
+			function = "i2c0";
+		};
+
+		conf {
+			groups = "i2c0_10_grp";
+			bias-pull-up;
+			slew-rate = <1>;
+			io-standard = <1>;
+		};
+	};
+
+	pinctrl_i2c0_gpio: i2c0-gpio {
+		mux {
+			groups = "gpio0_42_grp", "gpio0_43_grp";
+			function = "gpio0";
+		};
+
+		conf {
+			groups = "gpio0_42_grp", "gpio0_43_grp";
+			slew-rate = <1>;
+			io-standard = <1>;
+		};
+	};
+
+	
+	pinctrl_uart0_default: uart0-default {
+		mux {
+			groups = "uart0_11_grp";
+			function = "uart0";
+		};
+
+		conf {
+			groups = "uart0_11_grp";
+			slew-rate = <1>;
+			io-standard = <1>;
+		};
+
+		conf-rx {
+			pins = "MIO46";
+			bias-high-impedance;
+		};
+
+		conf-tx {
+			pins = "MIO47";
+			bias-disable;
+		};
+	};
+
+	pinctrl_uart1_default: uart1-default {
+		mux {
+			groups = "uart1_17_grp";
+			function = "uart1";
+		};
+
+		conf {
+			groups = "uart1_17_grp";
+			slew-rate = <1>;
+			io-standard = <1>;
+		};
+
+		conf-rx {
+			pins = "MIO69";
+			bias-high-impedance;
+		};
+
+		conf-tx {
+			pins = "MIO68";
+			bias-disable;
+		};
+	};
+
+	
+	pinctrl_nand0_default: nand0-default {
+		mux {
+			groups = "nand0_0_grp";
+			function = "nand0";
+		};
+
+		conf {
+			groups = "nand0_0_grp";
+			bias-pull-up;
+		};
+
+		mux-ce {
+			groups = "nand0_ce_0_grp";
+			function = "nand0_ce";
+		};
+
+		conf-ce {
+			groups = "nand0_ce_0_grp";
+			bias-pull-up;
+		};
+
+		mux-rb {
+			groups = "nand0_rb_0_grp";
+			function = "nand0_rb";
+		};
+
+		conf-rb {
+			groups = "nand0_rb_0_grp";
+			bias-pull-up;
+		};
+
+		mux-dqs {
+			groups = "nand0_dqs_0_grp";
+			function = "nand0_dqs";
+		};
+
+		conf-dqs {
+			groups = "nand0_dqs_0_grp";
+			bias-pull-up;
+		};
+	};
+	
+};

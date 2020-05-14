@@ -1,0 +1,207 @@
+#!/usr/bin/env python
+import rrupy
+import os
+from datetime import datetime
+
+from ctypes import c_char_p, c_uint, c_int, c_long, c_ulonglong, c_size_t, c_double, c_longlong, c_float, \
+		c_uint64, c_ssize_t, c_char, c_void_p, c_bool, create_string_buffer, byref as _byref
+from sys import argv
+def error():
+	print('Syntax error')
+	print('Use: pcietool help')
+	rrupy.rru_close_device()
+	exit(-1)
+def main():
+	ret = rrupy.rru_open_device()
+	if (ret):
+		print('Cannot open rru device')
+		exit(-1)
+	if len(argv) == 1 :
+		error()
+	elif argv[1] == 'read':
+		if len(argv) != 5:
+			error()
+		if argv[2] == 'reg':
+			ret = rrupy.rru_read_reg(int(argv[3]), int(argv[4],16))
+			if ret == -1:
+				print('Error when reading data')
+				exit(-1)
+			print('Read data: %d in decimal' % (ret))
+		elif argv[2] == 'attr':
+			print('not usable yet')
+		else:
+			error()
+	elif argv[1] == 'write':
+		if len(argv) != 6:
+			error()
+		if argv[2] == 'reg':
+			print("Write id = %d, reg = 0x%x, data = %d" % (int(argv[3]), int(argv[4],16), rrupy.int_conveter(argv[5])))
+			ret = rrupy.rru_write_reg(int(argv[3]), int(argv[4],16), rrupy.int_conveter(argv[5]))
+			if ret < 0:
+				print("Failed to write id %d", int(argv[3]))
+		elif argv[2] == 'attr':
+			print('not usable yet')
+		else:
+			error()
+	elif argv[1] == 'help':
+		rrupy.usage()
+	elif argv[1] == 'reset':
+		if len(argv) < 4:
+			error()
+		if argv == 'pa':
+			print('PA feature is not supported')
+		if len(argv) != 3:
+			error()
+		rrupy.rru_rf_reset(int(argv[2]))
+	elif argv[1] == 'dump':
+		if len(argv) != 3:
+			error()
+		ret = rrupy.rru_dump_registers(int(argv[2]))
+	elif argv[1] == 'gpio':
+		if len(argv) < 4 or len(argv) > 5:
+			error()
+		if argv[2] == 'set':
+			ret = rrupy.set_gpio_state(int(argv[3]), int(argv[4])) 
+			print("Write gpio %d state: %d" % (int(argv[3]), int(argv[4])))
+		elif argv[2] == 'get':
+			ret = rrupy.get_gpio_state(int(argv[3]))
+			print("State: %d" % (ret))
+		else:
+			error()
+	elif argv[1] == 'gain':
+		if len(argv) < 5 or len(argv) > 6:
+			error()
+		if argv[2] == 'set':
+			ret = rrupy.set_trx_gain(int(argv[3]), int(argv[4]), float(argv[5])) 
+			print("Write gain value: %f" % (float(argv[4])))
+		elif argv[2] == 'get':
+			value = c_float()
+			ret = rrupy.get_trx_gain(int(argv[3]), int(argv[4]), _byref(value))
+			print("Gain value: %f" % (value.value))
+		else:
+			error()
+	elif argv[1] == 'state':
+		if len(argv) < 5 or len(argv) > 6:
+			error()
+		if argv[2] == 'set':
+			ret = rrupy.set_trx_state(int(argv[3]), int(argv[4]), int(argv[5])) 
+			print("Write state value: %d" % (int(argv[4])))
+		elif argv[2] == 'get':
+			value = c_int()
+			ret = rrupy.get_trx_state(int(argv[3]), int(argv[4]), _byref(value))
+			print("State value: %d" % (value.value))
+		else:
+			error()
+	elif argv[1] == 'led':
+		if len(argv) < 4 or len(argv) > 5:
+			error()
+		if argv[2] == 'get':
+			ret = rrupy.get_led_state(int(argv[3]))
+			print('LED state: %d' % ret)
+		elif argv[2] == 'set':
+			ret = rrupy.set_led_state(int(argv[3]), int(argv[4]))
+			if ret:
+				print('Cannot set state of led %s' % argv[3])
+		elif argv[2] == 'blink':
+			ret = rrupy.set_led_blink(int(argv[3]), int(argv[4]))
+			if ret:
+				print('Cannot set blink for led %s' % argv[3])
+		else:
+			error()
+	elif argv[1] == 'pa':
+		if argv[2] == 'info':
+			rrupy.info_pa()
+		elif argv[2] == 'status':
+			rrupy.status_pa()
+		else:
+			error()
+	elif argv[1] == 'hwinfo':
+		if len(argv) < 3:
+			error()
+		elif argv[2] == 'set':
+			ret = rrupy.do_set_new_hw_info(argv[3], argv[4])
+			if ret < 0:
+				print('Error when write to eeprom')
+			else:
+				print('Done')
+		elif argv[2] == 'get':
+			rru = rrupy.hw_info()
+			ret = rrupy.get_rru_hw_info(_byref(rru))
+			if ret < 0:
+				print('Failed to get hardware infomation')
+			else:
+				rrupy.show_hw_info(rru)
+	elif argv[1] == 'power':
+		print('Power feature is not supported')
+	elif argv[1] == 'cfr':
+		print('CFR feature is not supported')
+	elif argv[1] == 'selftest':
+		rrupy.rru_self_test()
+	elif argv[1] == 'calibpa':
+		print('Calibpa feature is not supported')
+	elif argv[1] == 'calibvswr':
+		print('Calibvswr feature is not supported')
+	elif argv[1] == '--version' or argv[1] == '-v':
+		print('Check rrutool version')
+		# lastmodified= os.stat('/usr/bin/rrutool').st_mtime
+		# print('Build date: ' + str(datetime.fromtimestamp(lastmodified)))
+	elif argv[1] == '-librru':
+		if len(argv) == 3 and argv[2] == '--version':
+			rrupy.checklibrruversion()
+		else:
+			error()
+	elif argv[1] == 'vss':
+		print('VSS feature is not supported')
+	elif argv[1] == 'freq':
+		if argv[2] == 'set':
+			if argv[3] == 'rru':
+				rrupy.set_rru_freq(int(argv[4]))
+			else:
+				try:
+					rrupy.set_trx_frequency(int(argv[3]), int(argv[4]))
+				except ValueError:
+					print('Error Type')
+					print('Try again')
+		elif argv[2] == 'get':
+			if argv[3] == 'rru':
+				value = c_ulonglong()
+				rrupy.get_rru_freq(_byref(value))
+				print('Frequency: %d' % value.value)
+			else:
+				value = c_ulonglong()
+				try:
+					rrupy.get_trx_frequency(int(argv[3]), _byref(value))
+					print('Frequency: %d' % value.value)
+				except ValueError:
+					print('Error Type')
+					print('Try again')
+		else:
+			error()
+	elif argv[1] == 'bw':
+		if len(argv) != 4:
+			error()
+		value = c_ulonglong()
+		ret = rrupy.get_trx_bandwidth(int(argv[3]), int(argv[4]), _byref(value))
+		if not ret:
+			print('Bandwidth: %d' % value.value)
+		else:
+			error()
+	elif argv[1] == 'sfpinfo':
+		rrupy.sfp_print_info()
+	elif argv[1] == 'rfinfo':
+		print(argv[1])
+	elif argv[1] == 'sysinfo':
+		rrupy.rru_get_common_info()
+	elif argv[1] == 'cpu':
+		rrupy.rru_cpu_get_info()
+	elif argv[1] == 'fpgainfo':
+		print(argv[1])
+	elif argv[1] == 'cpriinfo':
+		print(argv[1])
+	elif argv[1] == 'jesdinfo':
+		print(argv[1])
+	else:
+		error()
+	rrupy.rru_close_device()
+if __name__ == '__main__':
+	main()

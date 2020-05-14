@@ -1,0 +1,44 @@
+#
+# Hardware monitoring chip drivers configuration
+#
+
+menuconfig VIETTEL
+  bool "Viettel driver platform"
+  default y
+  help
+    Viettel RRU
+
+if VIETTEL
+
+
+config FAKEIIO
+        tristate "FAKEIIO"
+        default y
+        help
+          VIETTEL FAKEIIO DRIVER
+
+config QSFP
+        tristate "QSFP"
+        default y
+        help
+          VIETTEL QSFP DRIVER
+
+config IPCORE
+        tristate "IPCORE"
+        default y
+        help
+          VIETTEL IPCORE DRIVER
+
+config RRUGPIO
+        tristate "RRUGPIO"
+        default y
+        help
+          VIETTEL RRUGPIO DRIVER
+
+config CPLD_MUX
+        tristate "CPLD_MUX"
+        default y
+        help
+          VIETTEL CPLD_MUX DRIVER
+
+endif # VIETTEL

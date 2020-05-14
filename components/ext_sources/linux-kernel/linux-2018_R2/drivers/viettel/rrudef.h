@@ -1,0 +1,70 @@
+#ifndef __RRU_DEF_H__
+#define __RRU_DEF_H__
+
+enum rru_device_id{
+	RRU_ID_FAKEIIO,
+    RRU_ID_LMK05028,
+    RRU_ID_HMC7044,
+    RRU_ID_HMC7043,
+    RRU_ID_SFP_1_VENDOR,
+    RRU_ID_SFP_1_DIAGNOSTIC,
+    RRU_ID_SFP_2_VENDOR,
+    RRU_ID_SFP_2_DIAGNOSTIC,
+    RRU_ID_SFP_3_VENDOR,
+    RRU_ID_SFP_3_DIAGNOSTIC,
+    RRU_ID_SFP_4_VENDOR,
+    RRU_ID_SFP_4_DIAGNOSTIC,
+    RRU_ID_RRUGPIO,
+    RRU_ID_IPCORE,
+    RRU_ID_ADT7420,
+    RRU_ID_LM73,
+    RRU_ID_INA_12V,
+    RRU_ID_INA_28V,
+    RRU_ID_INA_3V3_VCCO,
+    RRU_ID_INA_1V8_VCCAUX,
+    RRU_ID_INA_1V8_VCCO,
+    RRU_ID_INA_1V2_VMGTAVTT,
+    RRU_ID_INA_1V2_VCCO,
+    RRU_ID_INA_0V9_VMGTAVCC,
+    RRU_ID_INA_0V85_VCCPSINTLP,
+    RRU_ID_INA_0V85_VCCINT,
+    RRU_ID_INA_0V85_VCCPSINTFP,
+    RRU_ID_INA_28V_PA,
+    RRU_ID_ADRV9009_TRX12,
+    RRU_ID_ADRV9009_TRX34,
+    RRU_ID_ADRV9009_TRX56,
+    RRU_ID_ADRV9009_TRX78,
+    RRU_ID_ADRV9009_CALIB,
+    RRU_ID_PCA9551,
+    RRU_ID_PA,
+};
+
+#define TX12_CPL_SW 		18 // EMIO 18
+#define TX34_CPL_SW 		19
+#define TX56_CPL_SW 		20
+#define TX78_CPL_SW 		21
+#define CALIB_SW_V1 		24
+//#define CALIB_SW_V2 		24
+#define LINUX_OK 			22
+#define WDI 				23
+#define TEST_LED4 			26
+#define ANTENNA_ON 			27
+/* not assign pin yet */
+/*
+#define LED1_E_STATUS_LOS 	94
+#define LED2_E_STATUS_LOS 	95
+#define LED3_E_STATUS_LOS 	96
+#define LED4_E_STATUS_LOS 	97
+*/
+
+#define GET_GPIO_PIN(x)	(x + 78 + 338)
+
+enum state{
+	OFF = 0,
+	ON = 1,
+};
+
+#define TRUE 1
+#define FALSE 0
+
+#endif

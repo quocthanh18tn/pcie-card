@@ -1,0 +1,1 @@
+obj-$(CONFIG_QSFP) +=  qsfp.o
